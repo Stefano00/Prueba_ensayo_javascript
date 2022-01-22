@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prueba Javascript</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous" />
+</head>
+
+<body>
+    <div id="Monitor">
+        <h2 class="pt-3">Monitor de Inventario</h2>
+        <div class="container">
+            <div class="row">
+                <div class="col-3">
+                    <span>Tienda</span>
+                    <select class="dropdown" id="stores-select">
+                    </select>
+                </div>
+                <div class="col-3">Categoría
+                    <select class="dropdown" id="categories-select">
+                    </select>
+                </div>
+                <div class="col-3">Marca
+                    <select class="dropdown" id="brands-select">
+                    </select>
+
+                </div>
+                <button type=button class="btn btn-primary col-3" id="search">Buscar</button>
+            </div>
+        </div>
+
+        <div id="Lista">
+            <div class="container pt-5 w-75">
+                <table class="table">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Tienda</th>
+                            <th scope="col">ID Producto</th>
+                            <th scope="col">Nombre Producto</th>
+                            <th scope="col">Inventario</th>
+                            <th scope="col">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpo"></tbody>
+                </table>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
+            crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
+        <style>
+            body {
+                text-align: center;
+            }
+        </style>
+
+        <script>
+            let url = "http://localhost:3000/";
+            let tbody = document.getElementById("cuerpo");
+
+            const storesSelectEl = document.querySelector("#stores-select");
+            const categoriesSelectEl = document.querySelector("#categories-select");
+            const brandsSelectEl = document.querySelector("#brands-select");
+            const searchBtnEl = document.querySelector("#search");
+
+            const getStores = async () => {
+                const res = await fetch("http://localhost:3000/tiendas");
+                return await res.json();
+            }
+
+            const getCategories = async () => {
+                const res = await fetch("http://localhost:3000/categorias");
+                return await res.json();
+            }
+
+            const getBrands = async () => {
+                const res = await fetch("http://localhost:3000/brands");
+                return await res.json();
+            }
+
+            const searchProducts = async (store, category, brand) => {
+                console.log(store, category, brand);
+                const res = await fetch(`http://localhost:3000/search`, {
+                    method: "POST",
+                    body: JSON.stringify({ category, store, brand }),
+                    headers: { "content-type": "application/json" }
+                });
+                return await res.json();
+            }
+
+            const printProducts = async () => {
+                const result = await searchProducts(storesSelectEl.value, categoriesSelectEl.value, brandsSelectEl.value);
+                tbody.innerHTML = "";
+                console.log(result);
+                result.rows.forEach(item => {
+                    let trEl = document.createElement('tr');
+                    let tdStoreEl = document.createElement('td');
+                    let tdIdEl = document.createElement('td');
+                    let tdNameEl = document.createElement('td');
+                    let tdInventoryEl = document.createElement('td');
+                    let tdActionEl = document.createElement('td');
+                    let actionBtnEl = document.createElement('button');
+
+                    tdStoreEl.innerText = item.store_name;
+                    tdIdEl.innerText = item.product_id;
+                    tdNameEl.innerText = item.product_name;
+                    tdInventoryEl.innerText = item.quantity;
+
+                    actionBtnEl.classList.add("btn", "btn-info", "btn-sm");
+                    actionBtnEl.innerText = "Ver";
+                    actionBtnEl.id = "show-info"
+                    tdActionEl.appendChild(actionBtnEl);
+
+                    trEl.appendChild(tdStoreEl);
+                    trEl.appendChild(tdIdEl);
+                    trEl.appendChild(tdNameEl);
+                    trEl.appendChild(tdInventoryEl);
+                    trEl.appendChild(tdActionEl);
+                    tbody.appendChild(trEl);
+                })
+            }
+
+            (async () => {
+                const [stores, categories, brands] = await Promise.all([getStores(), getCategories(), getBrands()
+                    //, printProducts()
+                ]);
+                console.log("stores ", stores);
+                stores.forEach((item) => {
+                    let opt = document.createElement('option');
+                    opt.value = item.store_id;
+                    opt.innerHTML = item.store_name;
+                    storesSelectEl.appendChild(opt);
+                });
+
+                categories.forEach((item) => {
+                    let opt = document.createElement('option');
+                    opt.value = item.category_id;
+                    opt.innerHTML = item.category_name;
+                    categoriesSelectEl.appendChild(opt);
+                })
+
+                brands.forEach((item) => {
+                    let opt = document.createElement('option');
+                    opt.value = item.brand_id;
+                    opt.innerHTML = item.brand_name;
+                    brandsSelectEl.appendChild(opt);
+                })
+            })();
+
+            searchBtnEl.addEventListener("click", async () => await printProducts())
+        </script>
+</body>
+
+</html>
